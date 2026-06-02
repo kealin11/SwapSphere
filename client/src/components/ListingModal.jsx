@@ -8,6 +8,11 @@ import Toast from './Toast';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Ccircle cx="200" cy="80" r="40"/%3E%3Cpath d="M80 150l70-80 70 80 100-120v220H80z"/%3E%3C/g%3E%3C/svg%3E';
 
+const safeNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+
 export default function ListingModal({ listing, onClose }) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -18,7 +23,8 @@ export default function ListingModal({ listing, onClose }) {
   const [offerAmount, setOfferAmount] = useState('');
   const [messageLoading, setMessageLoading] = useState(false);
   const [offerLoading, setOfferLoading] = useState(false);
-  const isOwner = user?.id === listing.user_id;
+  const listingId = listing?.id ?? listing?.listing_id ?? listing?.listingId;
+  const isOwner = Number(user?.id) === Number(listing?.user_id);
   const imageUrl = (() => {
     if (!listing.image_url) return PLACEHOLDER_IMAGE;
     if (listing.image_url.startsWith('http')) return listing.image_url;
@@ -68,10 +74,10 @@ export default function ListingModal({ listing, onClose }) {
 
       clearError();
 
-      const amountInCents = Math.round(Number(listing.price) * 100);
+      const amountInCents = Math.round(safeNumber(listing.price) * 100);
 
       await initiatePayment(amountInCents, listing.title, {
-        listing_id: listing.id,
+        listing_id: listingId,
         user_id: user.id,
       });
     } catch (err) {
@@ -90,9 +96,14 @@ export default function ListingModal({ listing, onClose }) {
       return;
     }
 
+    if (!listingId) {
+      showNotice('This listing is missing required details', 'error');
+      return;
+    }
+
     try {
       setMessageLoading(true);
-      const response = await conversationsAPI.create({ listing_id: listing.id });
+      const response = await conversationsAPI.create({ listing_id: listingId });
       onClose();
       navigate(`/inbox/${response.data.id}`);
     } catch (err) {
@@ -115,6 +126,11 @@ export default function ListingModal({ listing, onClose }) {
       return;
     }
 
+    if (!listingId) {
+      showNotice('This listing is missing required details', 'error');
+      return;
+    }
+
     const offeredPrice = Number(offerAmount);
     if (!Number.isFinite(offeredPrice) || offeredPrice <= 0) {
       showNotice('Enter a valid offer amount', 'error');
@@ -124,7 +140,7 @@ export default function ListingModal({ listing, onClose }) {
     try {
       setOfferLoading(true);
       await offersAPI.create({
-        listing_id: listing.id,
+        listing_id: listingId,
         offered_price: offeredPrice,
       });
       setOfferAmount('');
@@ -187,7 +203,7 @@ export default function ListingModal({ listing, onClose }) {
               <section className="rounded-lg border border-gray-200 bg-white p-5">
                 <p className="text-sm font-medium text-gray-500">Price</p>
                 <p className="mt-1 text-4xl font-bold tracking-normal text-blue-600">
-                  R{Number(listing.price).toFixed(2)}
+                  R{safeNumber(listing.price).toFixed(2)}
                 </p>
 
                 <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">

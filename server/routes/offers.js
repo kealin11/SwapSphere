@@ -23,11 +23,17 @@ const offerSelect = `
 `;
 
 router.post("/", authenticate, (req, res) => {
-  const buyerId = req.user.id;
-  const { listing_id, offered_price } = req.body;
+  const buyerId = Number(req.user?.id);
+  const rawListingId = req.body?.listing_id ?? req.body?.listingId;
+  const listingId = Number(rawListingId);
+  const { offered_price } = req.body;
   const price = Number(offered_price);
 
-  if (!listing_id || isNaN(listing_id)) {
+  if (!Number.isInteger(buyerId) || buyerId <= 0) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+
+  if (!Number.isInteger(listingId) || listingId <= 0) {
     return res.status(400).json({ message: "Valid listing_id is required" });
   }
 
@@ -35,7 +41,7 @@ router.post("/", authenticate, (req, res) => {
     return res.status(400).json({ message: "Offer price must be greater than zero" });
   }
 
-  db.query("SELECT id, user_id, status FROM listings WHERE id = ? LIMIT 1", [listing_id], (err, listings) => {
+  db.query("SELECT id, user_id, status FROM listings WHERE id = ? LIMIT 1", [listingId], (err, listings) => {
     if (err) {
       console.error("Offer listing lookup error:", err);
       return res.status(500).json({ message: "Database error" });
@@ -46,7 +52,7 @@ router.post("/", authenticate, (req, res) => {
     }
 
     const listing = listings[0];
-    if (listing.user_id === buyerId) {
+    if (Number(listing.user_id) === buyerId) {
       return res.status(400).json({ message: "You cannot make an offer on your own listing" });
     }
 
@@ -56,7 +62,7 @@ router.post("/", authenticate, (req, res) => {
 
     db.query(
       "INSERT INTO offers (listing_id, buyer_id, seller_id, offered_price, status) VALUES (?, ?, ?, ?, 'pending')",
-      [listing_id, buyerId, listing.user_id, price],
+      [listingId, buyerId, listing.user_id, price],
       (insertErr, result) => {
         if (insertErr) {
           console.error("Offer create error:", insertErr);
@@ -65,7 +71,7 @@ router.post("/", authenticate, (req, res) => {
 
         res.status(201).json({
           id: result.insertId,
-          listing_id,
+          listing_id: listingId,
           buyer_id: buyerId,
           seller_id: listing.user_id,
           offered_price: price,
@@ -77,7 +83,11 @@ router.post("/", authenticate, (req, res) => {
 });
 
 router.get("/", authenticate, (req, res) => {
-  const userId = req.user.id;
+  const userId = Number(req.user?.id);
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
 
   db.query(
     `${offerSelect}
@@ -97,9 +107,14 @@ router.get("/", authenticate, (req, res) => {
 
 router.patch("/:id/accept", authenticate, (req, res) => {
   const { id } = req.params;
+  const userId = Number(req.user?.id);
 
   if (!id || isNaN(id)) {
     return res.status(400).json({ message: "Invalid offer ID" });
+  }
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(401).json({ message: "Authentication required" });
   }
 
   db.beginTransaction((txErr) => {
@@ -108,7 +123,7 @@ router.patch("/:id/accept", authenticate, (req, res) => {
     db.query("SELECT * FROM offers WHERE id = ? LIMIT 1", [id], (err, offers) => {
       if (err) return db.rollback(() => res.status(500).json({ message: "Database error" }));
 
-      if (!offers.length || offers[0].seller_id !== req.user.id) {
+      if (!offers.length || Number(offers[0].seller_id) !== userId) {
         return db.rollback(() => res.status(404).json({ message: "Offer not found" }));
       }
 
@@ -138,9 +153,14 @@ router.patch("/:id/accept", authenticate, (req, res) => {
 
 router.patch("/:id/reject", authenticate, (req, res) => {
   const { id } = req.params;
+  const userId = Number(req.user?.id);
 
   if (!id || isNaN(id)) {
     return res.status(400).json({ message: "Invalid offer ID" });
+  }
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(401).json({ message: "Authentication required" });
   }
 
   db.query("SELECT * FROM offers WHERE id = ? LIMIT 1", [id], (err, offers) => {
@@ -149,7 +169,7 @@ router.patch("/:id/reject", authenticate, (req, res) => {
       return res.status(500).json({ message: "Database error" });
     }
 
-    if (!offers.length || offers[0].seller_id !== req.user.id) {
+    if (!offers.length || Number(offers[0].seller_id) !== userId) {
       return res.status(404).json({ message: "Offer not found" });
     }
 

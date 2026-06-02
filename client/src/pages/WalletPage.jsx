@@ -6,10 +6,25 @@ import Toast from '../components/Toast';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Ccircle cx="200" cy="80" r="40"/%3E%3Cpath d="M80 150l70-80 70 80 100-120v220H80z"/%3E%3C/g%3E%3C/svg%3E';
 
+const safeNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+
+const formatMoney = (value) => safeNumber(value).toFixed(2);
+
+const normalizeWalletData = (data = {}) => ({
+  ...data,
+  walletBalance: safeNumber(data.walletBalance),
+  totalSales: safeNumber(data.totalSales),
+  activeListingsCount: safeNumber(data.activeListingsCount),
+  soldListingsCount: safeNumber(data.soldListingsCount),
+});
+
 export default function WalletPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [walletData, setWalletData] = useState(null);
+  const [walletData, setWalletData] = useState(() => normalizeWalletData());
   const [transactions, setTransactions] = useState([]);
   const [recentSales, setRecentSales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,18 +46,22 @@ export default function WalletPage() {
 
       // Fetch wallet info
       const walletRes = await walletAPI.getWalletInfo(user.id);
-      setWalletData(walletRes.data);
+      setWalletData(normalizeWalletData(walletRes.data));
 
       // Fetch recent transactions
       const transRes = await ordersAPI.getTransactionHistory(user.id, 10, 0);
-      setTransactions(transRes.data.transactions || []);
+      setTransactions(Array.isArray(transRes.data?.transactions) ? transRes.data.transactions : []);
 
       // Fetch recent sales
       const salesRes = await ordersAPI.getSoldOrders(user.id);
-      setRecentSales(salesRes.data.slice(0, 5) || []);
+      const sales = Array.isArray(salesRes.data) ? salesRes.data : [];
+      setRecentSales(sales.slice(0, 5));
     } catch (err) {
       console.error('Error fetching wallet data:', err);
       setError('Failed to load wallet information');
+      setWalletData(normalizeWalletData());
+      setTransactions([]);
+      setRecentSales([]);
     } finally {
       setLoading(false);
     }
@@ -111,20 +130,20 @@ export default function WalletPage() {
         <div className="mb-8 rounded-lg bg-gradient-to-r from-blue-600 to-blue-800 p-8 text-white shadow-lg">
           <h2 className="mb-2 text-lg font-semibold opacity-90">Total Wallet Balance</h2>
           <div className="mb-6 flex items-baseline gap-2">
-            <span className="text-5xl font-bold">R{walletData?.walletBalance?.toFixed(2) || '0.00'}</span>
+            <span className="text-5xl font-bold">R{formatMoney(walletData.walletBalance)}</span>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-sm opacity-75">Total Sales</p>
-              <p className="text-2xl font-semibold">R{walletData?.totalSales?.toFixed(2) || '0.00'}</p>
+              <p className="text-2xl font-semibold">R{formatMoney(walletData.totalSales)}</p>
             </div>
             <div>
               <p className="text-sm opacity-75">Active Listings</p>
-              <p className="text-2xl font-semibold">{walletData?.activeListingsCount || 0}</p>
+              <p className="text-2xl font-semibold">{walletData.activeListingsCount || 0}</p>
             </div>
             <div>
               <p className="text-sm opacity-75">Sold Items</p>
-              <p className="text-2xl font-semibold">{walletData?.soldListingsCount || 0}</p>
+              <p className="text-2xl font-semibold">{walletData.soldListingsCount || 0}</p>
             </div>
           </div>
         </div>
@@ -146,7 +165,7 @@ export default function WalletPage() {
                 />
               </div>
               <p className="mb-4 text-xs text-gray-500">
-                Available: R{walletData?.walletBalance?.toFixed(2) || '0.00'}
+                Available: R{formatMoney(walletData.walletBalance)}
               </p>
               <button
                 onClick={handleWithdraw}
@@ -202,7 +221,7 @@ export default function WalletPage() {
                         <p className="text-xs text-gray-500">{formatDate(sale.created_at)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-green-600">+R{sale.amount?.toFixed(2) || '0.00'}</p>
+                        <p className="font-semibold text-green-600">+R{formatMoney(sale.amount)}</p>
                         <p className="text-xs text-gray-500 capitalize">{sale.status}</p>
                       </div>
                     </div>
@@ -234,7 +253,7 @@ export default function WalletPage() {
                             tx.type === 'credit' ? 'text-green-600' : 'text-red-600'
                           }`}
                         >
-                          {tx.type === 'credit' ? '+' : '-'}R{tx.amount?.toFixed(2) || '0.00'}
+                          {tx.type === 'credit' ? '+' : '-'}R{formatMoney(tx.amount)}
                         </p>
                         <p className="text-xs text-gray-500 capitalize">{tx.status}</p>
                       </div>

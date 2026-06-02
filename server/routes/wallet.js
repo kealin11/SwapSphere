@@ -1,6 +1,11 @@
 const router = require("express").Router();
 const db = require("../config/db");
 
+const safeNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
 // GET WALLET INFO - Get user wallet balance, total sales, and sold listings
 router.get("/:userId", (req, res) => {
   const { userId } = req.params;
@@ -40,10 +45,10 @@ router.get("/:userId", (req, res) => {
             }
 
             res.json({
-              walletBalance: user.wallet_balance || 0,
-              totalSales: sales[0]?.totalSales || 0,
-              soldListingsCount: sales[0]?.soldCount || 0,
-              activeListingsCount: listings[0]?.activeListing || 0,
+              walletBalance: safeNumber(user.wallet_balance),
+              totalSales: safeNumber(sales[0]?.totalSales),
+              soldListingsCount: safeNumber(sales[0]?.soldCount),
+              activeListingsCount: safeNumber(listings[0]?.activeListing),
               userName: user.name,
             });
           }
@@ -76,7 +81,7 @@ router.post("/withdraw/:userId", (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const currentBalance = users[0].wallet_balance || 0;
+    const currentBalance = safeNumber(users[0].wallet_balance);
 
     // Check if sufficient balance
     if (currentBalance < amount) {

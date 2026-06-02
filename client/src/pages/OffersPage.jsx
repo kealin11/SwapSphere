@@ -9,6 +9,11 @@ const statusStyles = {
   rejected: 'bg-red-100 text-red-800',
 };
 
+const safeNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+
 export default function OffersPage() {
   const { user } = useAuth();
   const [offers, setOffers] = useState([]);
@@ -17,14 +22,22 @@ export default function OffersPage() {
   const [filter, setFilter] = useState('all');
 
   const fetchOffers = async () => {
+    if (!user?.id) {
+      setOffers([]);
+      setLoading(false);
+      setError('Please log in to view offers');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
       const response = await offersAPI.getAll();
-      setOffers(response.data || []);
+      setOffers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Error loading offers:', err);
-      setError('Failed to load offers');
+      setOffers([]);
+      setError(err.response?.data?.message || 'Failed to load offers');
     } finally {
       setLoading(false);
     }
@@ -33,7 +46,7 @@ export default function OffersPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchOffers();
-  }, []);
+  }, [user?.id]);
 
   const handleDecision = async (offerId, action) => {
     try {
@@ -113,7 +126,7 @@ export default function OffersPage() {
           />
         )}
 
-        {!loading && filteredOffers.length > 0 && (
+        {!loading && !error && filteredOffers.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2">
             {filteredOffers.map((offer) => {
               const isSeller = offer.seller_id === user?.id;
@@ -126,24 +139,24 @@ export default function OffersPage() {
                         {isSeller ? `Buyer: ${offer.buyer_name}` : `Seller: ${offer.seller_name}`}
                       </p>
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${statusStyles[offer.status]}`}>
-                      {offer.status}
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${statusStyles[offer.status] || statusStyles.pending}`}>
+                      {offer.status || 'pending'}
                     </span>
                   </div>
 
                   <div className="mt-5 grid grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4">
                     <div>
                       <p className="text-xs font-semibold uppercase text-gray-500">Listed</p>
-                      <p className="mt-1 text-lg font-bold text-gray-900">R{Number(offer.listing_price).toFixed(2)}</p>
+                      <p className="mt-1 text-lg font-bold text-gray-900">R{safeNumber(offer.listing_price).toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase text-gray-500">Offered</p>
-                      <p className="mt-1 text-lg font-bold text-blue-600">R{Number(offer.offered_price).toFixed(2)}</p>
+                      <p className="mt-1 text-lg font-bold text-blue-600">R{safeNumber(offer.offered_price).toFixed(2)}</p>
                     </div>
                   </div>
 
                   <p className="mt-4 text-sm text-gray-500">
-                    Created {new Date(offer.created_at).toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    Created {offer.created_at ? new Date(offer.created_at).toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' }) : 'recently'}
                   </p>
 
                   {isSeller && offer.status === 'pending' && (
