@@ -11,9 +11,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded images as static files
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/listings", require("./routes/listings"));

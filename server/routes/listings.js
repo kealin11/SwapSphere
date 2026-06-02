@@ -2,25 +2,15 @@ const router = require("express").Router();
 const db = require("../config/db");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
+const cloudinary = require("../config/cloudinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, "../uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename: timestamp + random number + original extension
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    cb(null, name + "-" + uniqueSuffix + ext);
+// Configure Cloudinary storage for image uploads
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "swapsphere",
+    allowed_formats: ["jpg", "jpeg", "png"],
   },
 });
 
@@ -110,18 +100,12 @@ router.post("/", upload.single("image"), (req, res) => {
 
   // Validate required fields
   if (!title || !description || !price || !user_id) {
-    // Clean up uploaded file if validation fails
-    if (req.file) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error("Error deleting file:", err);
-      });
-    }
     return res.status(400).json({ message: "Missing required fields: title, description, price, user_id" });
   }
 
-  // Set image URL if file was uploaded
+  // Set image URL if file was uploaded (Cloudinary URL)
   if (req.file) {
-    imageUrl = `/uploads/${req.file.filename}`;
+    imageUrl = req.file.path;
   }
 
   db.query(
@@ -129,12 +113,6 @@ router.post("/", upload.single("image"), (req, res) => {
     [title, description, price, category || null, user_id, imageUrl],
     (err, result) => {
       if (err) {
-        // Clean up uploaded file if database insertion fails
-        if (req.file) {
-          fs.unlink(req.file.path, (err) => {
-            if (err) console.error("Error deleting file:", err);
-          });
-        }
         return res.status(500).json({ message: "Database error", error: err });
       }
       res.status(201).json({ 
