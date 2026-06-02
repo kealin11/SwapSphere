@@ -45,6 +45,34 @@ app.get("/", (req, res) => {
   res.send("API running");
 });
 
+// Error handling middleware (must be last)
+app.use((err, req, res, next) => {
+  console.error("Error:", {
+    message: err.message,
+    code: err.code,
+    status: err.status || 500,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
+
+  // Handle multer errors
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({ message: "File is too large (max 5MB)" });
+  }
+
+  if (err.code === "LIMIT_FILE_COUNT") {
+    return res.status(400).json({ message: "Too many files" });
+  }
+
+  if (err.message && err.message.includes("Only JPG, JPEG, PNG")) {
+    return res.status(400).json({ message: err.message });
+  }
+
+  // Handle other errors
+  res.status(err.status || 500).json({
+    message: err.message || "Internal server error",
+  });
+});
+
 // Server
 const PORT = process.env.PORT || 5000;
 

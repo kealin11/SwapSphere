@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API } from '../api/api';
+import { listingsAPI } from '../api/api';
 import useAuth from '../hooks/useAuth';
 import Toast from '../components/Toast';
 
@@ -102,29 +102,19 @@ export default function CreateListingPage() {
 
     try {
       // Create FormData for multipart/form-data request
-      const data = new FormData();
-      data.append('title', formData.title.trim());
-      data.append('description', formData.description.trim());
-      data.append('price', parseFloat(formData.price));
-      data.append('category', formData.category);
-      data.append('user_id', user.id);
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title.trim());
+      formDataToSend.append('description', formData.description.trim());
+      formDataToSend.append('price', parseFloat(formData.price));
+      formDataToSend.append('category', formData.category);
 
       // Append image file if selected
       if (imageFile) {
-        data.append('image', imageFile);
+        formDataToSend.append('image', imageFile);
       }
 
-      // Send request with FormData
-      const response = await fetch(`${API}/listings`, {
-        method: 'POST',
-        body: data,
-        // Do NOT set Content-Type header - browser will set it automatically with boundary
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create listing');
-      }
+      // Use listingsAPI.create with FormData (axios handles FormData correctly with multipart/form-data)
+      const response = await listingsAPI.create(formDataToSend);
 
       setToast({ type: 'success', message: 'Listing created successfully!' });
       setTimeout(() => {
@@ -133,7 +123,7 @@ export default function CreateListingPage() {
     } catch (err) {
       setToast({ 
         type: 'error', 
-        message: err.message || 'Failed to create listing. Please try again.' 
+        message: err.response?.data?.message || err.message || 'Failed to create listing. Please try again.' 
       });
       console.error('Error creating listing:', err);
     } finally {
