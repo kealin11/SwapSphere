@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import usePayFast from '../hooks/usePayFast';
-import { conversationsAPI, offersAPI } from '../api/api';
+import { buildImageUrl, conversationsAPI, offersAPI } from '../api/api';
 import Toast from './Toast';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Ccircle cx="200" cy="80" r="40"/%3E%3Cpath d="M80 150l70-80 70 80 100-120v220H80z"/%3E%3C/g%3E%3C/svg%3E';
@@ -25,11 +25,7 @@ export default function ListingModal({ listing, onClose }) {
   const [offerLoading, setOfferLoading] = useState(false);
   const listingId = listing?.id ?? listing?.listing_id ?? listing?.listingId;
   const isOwner = Number(user?.id) === Number(listing?.user_id);
-  const imageUrl = (() => {
-    if (!listing.image_url) return PLACEHOLDER_IMAGE;
-    if (listing.image_url.startsWith('http')) return listing.image_url;
-    return `http://localhost:5000${listing.image_url}`;
-  })();
+  const imageUrl = buildImageUrl(listing.image_url, PLACEHOLDER_IMAGE);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;

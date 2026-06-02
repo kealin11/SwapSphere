@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { conversationsAPI } from '../api/api';
+import { buildImageUrl, conversationsAPI } from '../api/api';
 import EmptyState from '../components/EmptyState';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Ccircle cx="200" cy="80" r="40"/%3E%3Cpath d="M80 150l70-80 70 80 100-120v220H80z"/%3E%3C/g%3E%3C/svg%3E';
 
 const getImageUrl = (imageUrl) => {
-  if (!imageUrl) return PLACEHOLDER_IMAGE;
-  if (imageUrl.startsWith('http')) return imageUrl;
-  return `http://localhost:5000${imageUrl}`;
+  return buildImageUrl(imageUrl, PLACEHOLDER_IMAGE);
 };
 
 const formatTime = (dateString) => {

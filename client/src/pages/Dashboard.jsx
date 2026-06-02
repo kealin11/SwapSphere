@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import { conversationsAPI, listingsAPI, offersAPI, ordersAPI } from '../api/api';
+import { buildImageUrl, conversationsAPI, listingsAPI, offersAPI, ordersAPI } from '../api/api';
 import DashboardSidebar from '../components/DashboardSidebar';
 import WalletSummary from '../components/WalletSummary';
 import Toast from '../components/Toast';
@@ -258,16 +258,7 @@ export default function Dashboard() {
             {!loading && listings.length > 0 && (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {listings.map((listing) => {
-                  // Construct full image URL
-                  const getImageUrl = () => {
-                    if (!listing.image_url) return PLACEHOLDER_IMAGE;
-                    // If image_url is already a full URL, use it as-is
-                    if (listing.image_url.startsWith('http')) return listing.image_url;
-                    // Otherwise, prepend the backend URL
-                    return `http://localhost:5000${listing.image_url}`;
-                  };
-                  
-                  const imageUrl = getImageUrl();
+                  const imageUrl = buildImageUrl(listing.image_url, PLACEHOLDER_IMAGE);
                   
                   return (
                     <div key={listing.id} className="overflow-hidden rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300">

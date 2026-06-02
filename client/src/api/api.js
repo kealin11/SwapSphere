@@ -1,13 +1,23 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+export const API = import.meta.env.VITE_API_URL;
+
+const API_ORIGIN = API?.replace(/\/api\/?$/, '') || '';
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+export const buildImageUrl = (imageUrl, fallback = '') => {
+  if (!imageUrl) return fallback;
+  if (imageUrl.startsWith('http') || imageUrl.startsWith('data:')) return imageUrl;
+
+  // TODO: Migrate /uploads assets to persistent object storage/CDN for production.
+  return API_ORIGIN ? `${API_ORIGIN}${imageUrl}` : imageUrl;
+};
 
 // Add token to requests if available
 api.interceptors.request.use((config) => {

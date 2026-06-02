@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listingsAPI } from '../api/api';
+import { API } from '../api/api';
 import useAuth from '../hooks/useAuth';
 import Toast from '../components/Toast';
 
@@ -115,7 +115,7 @@ export default function CreateListingPage() {
       }
 
       // Send request with FormData
-      const response = await fetch('http://localhost:5000/api/listings', {
+      const response = await fetch(`${API}/listings`, {
         method: 'POST',
         body: data,
         // Do NOT set Content-Type header - browser will set it automatically with boundary
