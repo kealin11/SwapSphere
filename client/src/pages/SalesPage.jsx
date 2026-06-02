@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import useAuth from '../hooks/useAuth';
-import { ordersAPI } from '../api/api';
+import { ordersAPI, buildImageUrl } from '../api/api';
 import EmptyState from '../components/EmptyState';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Ccircle cx="200" cy="80" r="40"/%3E%3Cpath d="M80 150l70-80 70 80 100-120v220H80z"/%3E%3C/g%3E%3C/svg%3E';
@@ -135,7 +135,7 @@ export default function SalesPage() {
             <div key={sale.orderId} className="rounded-lg bg-white shadow-md overflow-hidden hover:shadow-lg transition">
               <div className="relative h-48 overflow-hidden bg-gray-200">
                 <img
-                  src={sale.image_url || PLACEHOLDER_IMAGE}
+                  src={buildImageUrl(sale.image_url, PLACEHOLDER_IMAGE)}
                   alt={sale.title}
                   className="h-full w-full object-cover"
                 />

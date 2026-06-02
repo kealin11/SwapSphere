@@ -4,6 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const cloudinary = require("../config/cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const authenticate = require("../middleware/auth");
 
 // Configure Cloudinary storage for image uploads
 const storage = new CloudinaryStorage({
@@ -93,14 +94,15 @@ router.get("/user/:id", (req, res) => {
   });
 });
 
-// CREATE LISTING
-router.post("/", upload.single("image"), (req, res) => {
-  const { title, description, price, category, user_id } = req.body;
+// CREATE LISTING - Protected route
+router.post("/", authenticate, upload.single("image"), (req, res) => {
+  const { title, description, price, category } = req.body;
+  const userId = req.user.id; // Use JWT user_id, not request body
   let imageUrl = null;
 
   // Validate required fields
-  if (!title || !description || !price || !user_id) {
-    return res.status(400).json({ message: "Missing required fields: title, description, price, user_id" });
+  if (!title || !description || !price) {
+    return res.status(400).json({ message: "Missing required fields: title, description, price" });
   }
 
   // Set image URL if file was uploaded (Cloudinary URL)
@@ -110,7 +112,7 @@ router.post("/", upload.single("image"), (req, res) => {
 
   db.query(
     "INSERT INTO listings (title, description, price, category, user_id, image_url) VALUES (?, ?, ?, ?, ?, ?)",
-    [title, description, price, category || null, user_id, imageUrl],
+    [title, description, price, category || null, userId, imageUrl],
     (err, result) => {
       if (err) {
         return res.status(500).json({ message: "Database error", error: err });
@@ -124,22 +126,32 @@ router.post("/", upload.single("image"), (req, res) => {
   );
 });
 
-// DELETE LISTING BY ID
-router.delete("/:id", (req, res) => {
+// DELETE LISTING BY ID - Protected route
+router.delete("/:id", authenticate, (req, res) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   if (!id || isNaN(id)) {
     return res.status(400).json({ message: "Invalid listing ID" });
   }
 
-  db.query("DELETE FROM listings WHERE id = ?", [id], (err, result) => {
+  // First, verify the listing belongs to the user
+  db.query("SELECT user_id FROM listings WHERE id = ?", [id], (err, listings) => {
     if (err) return res.status(500).json({ message: "Database error" });
 
-    if (result.affectedRows === 0) {
+    if (!listings.length) {
       return res.status(404).json({ message: "Listing not found" });
     }
 
-    res.json({ message: "Listing deleted successfully" });
+    if (listings[0].user_id !== userId) {
+      return res.status(403).json({ message: "You can only delete your own listings" });
+    }
+
+    // Delete the listing
+    db.query("DELETE FROM listings WHERE id = ?", [id], (deleteErr, result) => {
+      if (deleteErr) return res.status(500).json({ message: "Database error" });
+      res.json({ message: "Listing deleted successfully" });
+    });
   });
 });
 

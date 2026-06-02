@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import { walletAPI, ordersAPI } from '../api/api';
+import { walletAPI, ordersAPI, buildImageUrl } from '../api/api';
 import Toast from '../components/Toast';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Ccircle cx="200" cy="80" r="40"/%3E%3Cpath d="M80 150l70-80 70 80 100-120v220H80z"/%3E%3C/g%3E%3C/svg%3E';
@@ -211,7 +211,7 @@ export default function WalletPage() {
                   {recentSales.map((sale) => (
                     <div key={sale.orderId} className="flex gap-4 rounded border border-gray-200 p-4">
                       <img
-                        src={sale.image_url || PLACEHOLDER_IMAGE}
+                        src={buildImageUrl(sale.image_url, PLACEHOLDER_IMAGE)}
                         alt={sale.title}
                         className="h-16 w-16 rounded object-cover"
                       />

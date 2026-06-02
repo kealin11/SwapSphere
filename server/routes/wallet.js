@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const db = require("../config/db");
+const authenticate = require("../middleware/auth");
 
 const safeNumber = (value) => {
   const number = Number(value);
@@ -58,13 +59,19 @@ router.get("/:userId", (req, res) => {
   });
 });
 
-// POST WITHDRAW - Simulate wallet withdrawal
-router.post("/withdraw/:userId", (req, res) => {
+// POST WITHDRAW - Simulate wallet withdrawal (Protected route)
+router.post("/withdraw/:userId", authenticate, (req, res) => {
   const { userId } = req.params;
   const { amount, description } = req.body;
+  const requestingUserId = req.user.id;
 
   if (!userId || isNaN(userId)) {
     return res.status(400).json({ message: "Invalid user ID" });
+  }
+
+  // Verify the user can only withdraw from their own wallet
+  if (Number(userId) !== Number(requestingUserId)) {
+    return res.status(403).json({ message: "You can only withdraw from your own wallet" });
   }
 
   if (!amount || amount <= 0 || isNaN(amount)) {

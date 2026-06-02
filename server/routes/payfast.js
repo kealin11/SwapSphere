@@ -22,13 +22,16 @@ router.post("/pay", async (req, res) => {
 
     const amountInRand = (Number(amount) / 100).toFixed(2);
 
+    const clientUrl = process.env.CLIENT_URL?.replace(/\/$/, "") || "http://localhost:5173";
+    const serverUrl = process.env.SERVER_URL?.replace(/\/$/, "") || "http://localhost:5000";
+
     const paymentData = {
       merchant_id,
       merchant_key,
 
-      return_url: "http://localhost:5173/payment-success",
-      cancel_url: "http://localhost:5173/payment-cancelled",
-      notify_url: "http://localhost:5000/api/payfast/notify",
+      return_url: `${clientUrl}/payment-success`,
+      cancel_url: `${clientUrl}/payment-cancelled`,
+      notify_url: `${serverUrl}/api/payfast/notify`,
 
       name_first: "SwapSphere",
       email_address: "buyer@test.com",

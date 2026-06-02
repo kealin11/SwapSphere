@@ -15,7 +15,7 @@ export const buildImageUrl = (imageUrl, fallback = '') => {
   if (!imageUrl) return fallback;
   if (imageUrl.startsWith('http') || imageUrl.startsWith('data:')) return imageUrl;
 
-  // TODO: Migrate /uploads assets to persistent object storage/CDN for production.
+  // For legacy local URLs, prepend API origin (but Cloudinary URLs are already full URLs)
   return API_ORIGIN ? `${API_ORIGIN}${imageUrl}` : imageUrl;
 };
 

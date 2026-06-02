@@ -1,21 +1,14 @@
 import { useState } from 'react';
 import ListingModal from './ListingModal';
+import { buildImageUrl } from '../api/api';
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Ccircle cx="200" cy="80" r="40"/%3E%3Cpath d="M80 150l70-80 70 80 100-120v220H80z"/%3E%3C/g%3E%3C/svg%3E';
 
 export default function ListingCard({ listing }) {
   const [showModal, setShowModal] = useState(false);
   
-  // Construct full image URL
-  const getImageUrl = () => {
-    if (!listing.image_url) return PLACEHOLDER_IMAGE;
-    // If image_url is already a full URL, use it as-is
-    if (listing.image_url.startsWith('http')) return listing.image_url;
-    // Otherwise, prepend the backend URL
-    return `http://localhost:5000${listing.image_url}`;
-  };
-  
-  const imageUrl = getImageUrl();
+  // Use buildImageUrl to properly handle Cloudinary URLs
+  const imageUrl = buildImageUrl(listing.image_url, PLACEHOLDER_IMAGE);
 
   // Format date
   const formatDate = (dateString) => {
