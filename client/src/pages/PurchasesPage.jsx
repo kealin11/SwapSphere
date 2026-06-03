@@ -3,7 +3,8 @@ import useAuth from '../hooks/useAuth';
 import { ordersAPI, buildImageUrl } from '../api/api';
 import EmptyState from '../components/EmptyState';
 
-const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Ccircle cx="200" cy="80" r="40"/%3E%3Cpath d="M80 150l70-80 70 80 100-120v220H80z"/%3E%3C/g%3E%3C/svg%3E';
+const PLACEHOLDER_IMAGE =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Ccircle cx="200" cy="80" r="40"/%3E%3Cpath d="M80 150l70-80 70 80 100-120v220H80z"/%3E%3C/g%3E%3C/svg%3E';
 
 export default function PurchasesPage() {
   const { user } = useAuth();
@@ -23,21 +24,30 @@ export default function PurchasesPage() {
       setLoading(true);
       setError(null);
       const response = await ordersAPI.getBoughtOrders(user.id);
-      setPurchases(response.data || []);
+
+      // Backend returns a plain array â€” handle both array and {data:[]} shapes
+      const raw = response.data ?? response;
+      const list = Array.isArray(raw) ? raw : [];
+      setPurchases(list);
     } catch (err) {
       console.error('Error fetching purchases:', err);
-      setError('Failed to load your purchases');
+      setError('Failed to load your purchases. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    if (!dateString) return 'Unknown date';
+    try {
+      return new Date(dateString).toLocaleDateString('en-ZA', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return 'Unknown date';
+    }
   };
 
   const getFilteredPurchases = () => {
@@ -46,7 +56,7 @@ export default function PurchasesPage() {
   };
 
   const filteredPurchases = getFilteredPurchases();
-  const statuses = ['all', ...new Set(purchases.map((p) => p.status))];
+  const statuses = ['all', ...new Set(purchases.map((p) => p.status).filter(Boolean))];
 
   if (loading) {
     return (
@@ -63,7 +73,16 @@ export default function PurchasesPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-8 px-4">
         <div className="mx-auto max-w-6xl">
-          <div className="rounded-lg bg-red-100 p-4 text-red-700">{error}</div>
+          <h1 className="mb-6 text-3xl font-bold">My Purchases</h1>
+          <div className="rounded-lg bg-red-100 p-4 text-red-700 flex items-center justify-between">
+            <span>{error}</span>
+            <button
+              onClick={fetchPurchases}
+              className="ml-4 text-sm font-semibold underline hover:no-underline"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -75,7 +94,7 @@ export default function PurchasesPage() {
         <div className="mx-auto max-w-6xl">
           <h1 className="mb-8 text-3xl font-bold">My Purchases</h1>
           <EmptyState
-            icon="🛍️"
+            icon="ðŸ›ï¸"
             title="No purchases yet"
             description="When you buy items from sellers, they'll appear here."
             actionText="Browse Listings"
@@ -111,34 +130,48 @@ export default function PurchasesPage() {
         {/* Purchases Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredPurchases.map((purchase) => (
-            <div key={purchase.orderId} className="rounded-lg bg-white shadow-md overflow-hidden hover:shadow-lg transition">
+            <div
+              key={purchase.orderId ?? purchase.id}
+              className="rounded-lg bg-white shadow-md overflow-hidden hover:shadow-lg transition"
+            >
               <div className="relative h-48 overflow-hidden bg-gray-200">
                 <img
                   src={buildImageUrl(purchase.image_url, PLACEHOLDER_IMAGE)}
-                  alt={purchase.title}
+                  alt={purchase.title ?? 'Item'}
                   className="h-full w-full object-cover"
+                  onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
                 />
                 <div className="absolute top-2 right-2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold capitalize">
-                  {purchase.status}
+                  {purchase.status ?? 'completed'}
                 </div>
               </div>
 
               <div className="p-4">
-                <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{purchase.title}</h3>
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{purchase.description}</p>
+                <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
+                  {purchase.title ?? 'Untitled item'}
+                </h3>
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  {purchase.description ?? ''}
+                </p>
 
                 <div className="mb-4 space-y-1">
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">Seller:</span> {purchase.sellerName}
+                    <span className="font-medium">Seller:</span>{' '}
+                    {purchase.sellerName ?? 'Unknown seller'}
                   </p>
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">Date:</span> {formatDate(purchase.created_at)}
+                    <span className="font-medium">Date:</span>{' '}
+                    {formatDate(purchase.created_at)}
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <span className="text-2xl font-bold text-blue-600">R{purchase.amount?.toFixed(2) || '0.00'}</span>
-                  <span className="text-sm font-medium text-gray-500">Order #{purchase.orderId}</span>
+                  <span className="text-2xl font-bold text-blue-600">
+                    R{Number(purchase.amount ?? 0).toFixed(2)}
+                  </span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Order #{purchase.orderId ?? purchase.id ?? 'â€”'}
+                  </span>
                 </div>
               </div>
             </div>
