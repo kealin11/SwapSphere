@@ -11,17 +11,22 @@ const safeNumber = (value) => {
 router.get("/:userId", (req, res) => {
   const { userId } = req.params;
 
+  console.log("💰 [GET /wallet/:userId] Wallet info requested:", { userId });
+
   if (!userId || isNaN(userId)) {
+    console.warn("❌ [GET /wallet/:userId] Invalid user ID:", userId);
     return res.status(400).json({ message: "Invalid user ID" });
   }
 
   // Get wallet balance and user info
   db.query("SELECT id, wallet_balance, name FROM users WHERE id = ?", [userId], (err, users) => {
     if (err) {
+      console.error("❌ [GET /wallet/:userId] Database error:", err);
       return res.status(500).json({ message: "Database error", error: err });
     }
 
     if (!users || users.length === 0) {
+      console.warn("❌ [GET /wallet/:userId] User not found:", userId);
       return res.status(404).json({ message: "User not found" });
     }
 
@@ -33,6 +38,7 @@ router.get("/:userId", (req, res) => {
       [userId, "completed"],
       (err, sales) => {
         if (err) {
+          console.error("❌ [GET /wallet/:userId] Error fetching sales:", err);
           return res.status(500).json({ message: "Database error", error: err });
         }
 
@@ -42,16 +48,20 @@ router.get("/:userId", (req, res) => {
           [userId],
           (err, listings) => {
             if (err) {
+              console.error("❌ [GET /wallet/:userId] Error fetching listings:", err);
               return res.status(500).json({ message: "Database error", error: err });
             }
 
-            res.json({
+            const walletInfo = {
               walletBalance: safeNumber(user.wallet_balance),
               totalSales: safeNumber(sales[0]?.totalSales),
               soldListingsCount: safeNumber(sales[0]?.soldCount),
               activeListingsCount: safeNumber(listings[0]?.activeListing),
               userName: user.name,
-            });
+            };
+
+            console.log("✅ [GET /wallet/:userId] Wallet info retrieved:", walletInfo);
+            res.json(walletInfo);
           }
         );
       }
@@ -65,26 +75,40 @@ router.post("/withdraw/:userId", authenticate, (req, res) => {
   const { amount, description } = req.body;
   const requestingUserId = req.user.id;
 
+  console.log("💸 [POST /wallet/withdraw/:userId] Withdrawal requested:", {
+    userId,
+    amount,
+    requestingUserId,
+  });
+
   if (!userId || isNaN(userId)) {
+    console.warn("❌ [POST /wallet/withdraw/:userId] Invalid user ID:", userId);
     return res.status(400).json({ message: "Invalid user ID" });
   }
 
   // Verify the user can only withdraw from their own wallet
   if (Number(userId) !== Number(requestingUserId)) {
+    console.warn("❌ [POST /wallet/withdraw/:userId] Authorization failed:", {
+      userId,
+      requestingUserId,
+    });
     return res.status(403).json({ message: "You can only withdraw from your own wallet" });
   }
 
   if (!amount || amount <= 0 || isNaN(amount)) {
+    console.warn("❌ [POST /wallet/withdraw/:userId] Invalid amount:", amount);
     return res.status(400).json({ message: "Invalid withdrawal amount" });
   }
 
   // Get current wallet balance
   db.query("SELECT wallet_balance FROM users WHERE id = ?", [userId], (err, users) => {
     if (err) {
+      console.error("❌ [POST /wallet/withdraw/:userId] Database error:", err);
       return res.status(500).json({ message: "Database error", error: err });
     }
 
     if (!users || users.length === 0) {
+      console.warn("❌ [POST /wallet/withdraw/:userId] User not found:", userId);
       return res.status(404).json({ message: "User not found" });
     }
 
@@ -92,18 +116,31 @@ router.post("/withdraw/:userId", authenticate, (req, res) => {
 
     // Check if sufficient balance
     if (currentBalance < amount) {
+      console.warn("❌ [POST /wallet/withdraw/:userId] Insufficient balance:", {
+        userId,
+        currentBalance,
+        requestedAmount: amount,
+      });
       return res.status(400).json({ message: "Insufficient wallet balance" });
     }
 
     // Start transaction
     db.beginTransaction((err) => {
-      if (err) return res.status(500).json({ message: "Database error", error: err });
+      if (err) {
+        console.error("❌ [POST /wallet/withdraw/:userId] Transaction error:", err);
+        return res.status(500).json({ message: "Database error", error: err });
+      }
+
+      console.log("✅ [POST /wallet/withdraw/:userId] Transaction started");
 
       // Deduct from wallet
       db.query("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?", [amount, userId], (err) => {
         if (err) {
+          console.error("❌ [POST /wallet/withdraw/:userId] Wallet update error:", err);
           return db.rollback(() => res.status(500).json({ message: "Database error", error: err }));
         }
+
+        console.log("✅ [POST /wallet/withdraw/:userId] Wallet deducted, creating transaction record");
 
         // Create wallet transaction record
         db.query(
@@ -111,21 +148,33 @@ router.post("/withdraw/:userId", authenticate, (req, res) => {
           [userId, "withdrawal", amount, description || "Wallet withdrawal", "completed"],
           (err, result) => {
             if (err) {
+              console.error("❌ [POST /wallet/withdraw/:userId] Transaction record error:", err);
               return db.rollback(() => res.status(500).json({ message: "Database error", error: err }));
             }
+
+            console.log("✅ [POST /wallet/withdraw/:userId] Transaction record created, committing");
 
             // Commit transaction
             db.commit((err) => {
               if (err) {
+                console.error("❌ [POST /wallet/withdraw/:userId] Commit error:", err);
                 return db.rollback(() => res.status(500).json({ message: "Database error", error: err }));
               }
+
+              const newBalance = currentBalance - amount;
+              console.log("✅ [POST /wallet/withdraw/:userId] Withdrawal completed:", {
+                userId,
+                amountWithdrawn: amount,
+                newBalance,
+                transactionId: result.insertId,
+              });
 
               res.json({
                 success: true,
                 message: "Withdrawal processed successfully",
                 transactionId: result.insertId,
                 amountWithdrawn: amount,
-                newBalance: currentBalance - amount,
+                newBalance: newBalance,
               });
             });
           }
