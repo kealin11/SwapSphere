@@ -93,12 +93,16 @@ router.post("/pay", async (req, res) => {
 // Utility function to update seller wallet and create order/payment records
 const processPaymentSuccess = async (data, source = "ITN") => {
   return new Promise((resolve, reject) => {
-    const {
-      custom_int1: buyerId,
-      custom_int2: listingId,
-      amount,
-      m_payment_id: paymentId,
-    } = data;
+const buyerId = data.custom_int1;
+const listingId = data.custom_int2;
+
+const amount =
+  data.amount ||
+  data.amount_gross;
+
+const paymentId =
+  data.m_payment_id ||
+  data.pf_payment_id;
 
     console.log(`📦 [processPaymentSuccess] Started (source: ${source}):`, {
       buyerId,
@@ -316,13 +320,22 @@ const processPaymentSuccess = async (data, source = "ITN") => {
  */
 router.post("/notify", async (req, res) => {
   try {
-    console.log("\n🔔 [/notify] PayFast ITN Received:", {
-      timestamp: new Date().toISOString(),
-      payer_id: req.body.payer_id,
-      m_payment_id: req.body.m_payment_id,
-      amount_gross: req.body.amount_gross,
-      payment_status: req.body.payment_status,
-    });
+console.log("🔔 PAYFAST RAW BODY:");
+console.log(req.body);
+
+if (!req.body) {
+  console.log("❌ No ITN body received");
+  return res.status(200).send("OK");
+}
+
+console.log("\n🔔 [/notify] PayFast ITN Received:", {
+  timestamp: new Date().toISOString(),
+  payer_id: req.body?.pf_payment_id,
+  m_payment_id: req.body?.m_payment_id,
+  amount_gross: req.body?.amount_gross,
+  payment_status: req.body?.payment_status,
+});
+    
 
     // Validate payment status
     if (req.body.payment_status !== "COMPLETE") {

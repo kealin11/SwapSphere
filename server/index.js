@@ -28,7 +28,12 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions));
+
+// JSON requests
 app.use(express.json());
+
+// PayFast ITN uses form-urlencoded data
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
