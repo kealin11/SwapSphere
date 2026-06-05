@@ -6,7 +6,7 @@ import CreateListingPage from './pages/CreateListingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminDashboard from './pages/AdminDashBoard';
 import AdminRoute from './components/AdminRoute';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
