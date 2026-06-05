@@ -36,12 +36,17 @@ export default function LoginPage() {
 
     try {
       const response = await authAPI.login(email, formData.password);
-      login(response.data);
 
-      // Get the user object from the response
-      const user = response.data.user || response.data;
+      // Pull token and user directly from response
+      const { token, user } = response.data;
 
-      // Redirect admin to admin dashboard, normal users to listings
+      // Store in context and localStorage
+      login({ token, user });
+
+      console.log('User after login:', user);
+      console.log('is_admin value:', user.is_admin);
+
+      // Redirect based on is_admin
       if (user.is_admin === 1) {
         navigate('/admin', { replace: true });
       } else {

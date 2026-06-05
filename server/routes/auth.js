@@ -9,7 +9,7 @@ const SALT_ROUNDS = 12;
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
 const publicUserFields =
-  "id, name, email, role_id, created_at, profile_image, is_admin";
+  "id, name, email, role_id, created_at, profile_image, is_admin, status";
 
 const createToken = (user) => {
   if (!process.env.JWT_SECRET) {
@@ -105,6 +105,11 @@ router.post("/login", (req, res) => {
 
       if (!passwordMatches) {
         return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Blocked user check
+      if (userRecord.status === "blocked") {
+        return res.status(403).json({ message: "Your account has been blocked. Please contact support." });
       }
 
       const { password: _password, ...user } = userRecord;

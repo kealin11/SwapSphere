@@ -5,8 +5,9 @@ import ListingsPage from './pages/ListingsPage';
 import CreateListingPage from './pages/CreateListingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import AdminDashboard from './admin/AdminDashboard';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminRoute from './components/AdminRoute';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
 import WalletPage from './pages/WalletPage';
@@ -17,8 +18,6 @@ import ConversationPage from './pages/ConversationPage';
 import OffersPage from './pages/OffersPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminRoute from './components/AdminRoute';
 import './App.css';
 
 export default function App() {
@@ -30,29 +29,35 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/listings" element={<ListingsPage />} />
-            <Route
-              path="/create-listing"
-              element={
-                <ProtectedRoute>
-                  <CreateListingPage />
-                </ProtectedRoute>
-              }
-            />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-cancelled" element={<PaymentCancelled />} />
+
+            {/* Admin only route */}
             <Route
               path="/admin"
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <AdminDashboard />
-                </ProtectedRoute>
+                </AdminRoute>
               }
             />
+
+            {/* Protected user routes */}
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create-listing"
+              element={
+                <ProtectedRoute>
+                  <CreateListingPage />
                 </ProtectedRoute>
               }
             />
@@ -63,7 +68,6 @@ export default function App() {
                   <WalletPage />
                 </ProtectedRoute>
               }
-              
             />
             <Route
               path="/purchases"
@@ -105,17 +109,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/payment-cancelled" element={<PaymentCancelled />} />
           </Routes>
-          <Route
-        path="/admin"
-        element={
-         <AdminRoute>
-           <AdminDashboard />
-         </AdminRoute>
-  }
-/>
         </main>
       </AuthProvider>
     </Router>
