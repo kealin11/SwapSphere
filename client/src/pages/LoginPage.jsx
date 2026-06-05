@@ -37,7 +37,16 @@ export default function LoginPage() {
     try {
       const response = await authAPI.login(email, formData.password);
       login(response.data);
-      navigate(location.state?.from?.pathname || '/listings', { replace: true });
+
+      // Get the user object from the response
+      const user = response.data.user || response.data;
+
+      // Redirect admin to admin dashboard, normal users to listings
+      if (user.is_admin === 1) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(location.state?.from?.pathname || '/listings', { replace: true });
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
       console.error('Error logging in:', err);

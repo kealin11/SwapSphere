@@ -45,6 +45,10 @@ app.use("/api/conversations", require("./routes/conversations"));
 app.use("/api/messages", require("./routes/messages"));
 app.use("/api/offers", require("./routes/offers"));
 
+//AdminDashboard
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', adminRoutes);
+
 // Test route
 app.get("/", (req, res) => {
   res.send("API running");

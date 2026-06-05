@@ -17,6 +17,8 @@ import ConversationPage from './pages/ConversationPage';
 import OffersPage from './pages/OffersPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminRoute from './components/AdminRoute';
 import './App.css';
 
 export default function App() {
@@ -61,6 +63,7 @@ export default function App() {
                   <WalletPage />
                 </ProtectedRoute>
               }
+              
             />
             <Route
               path="/purchases"
@@ -105,6 +108,14 @@ export default function App() {
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-cancelled" element={<PaymentCancelled />} />
           </Routes>
+          <Route
+        path="/admin"
+        element={
+         <AdminRoute>
+           <AdminDashboard />
+         </AdminRoute>
+  }
+/>
         </main>
       </AuthProvider>
     </Router>
