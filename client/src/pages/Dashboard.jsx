@@ -197,7 +197,7 @@ export default function Dashboard() {
                       {listings.filter((l) => l.status !== 'sold').length}
                     </p>
                   </div>
-                  <div className="text-4xl">âœ“</div>
+                  <div className="text-4xl"></div>
                 </div>
               </div>
               <div className="rounded-lg bg-white p-6 shadow-md">
@@ -206,7 +206,7 @@ export default function Dashboard() {
                     <p className="text-sm text-gray-600">Total Value</p>
                     <p className="text-3xl font-bold text-blue-600">R{totalValue.toFixed(2)}</p>
                   </div>
-                  <div className="text-4xl">ðŸ’°</div>
+                  <div className="text-4xl"></div>
                 </div>
               </div>
             </div>
