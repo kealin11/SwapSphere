@@ -186,7 +186,7 @@ export default function Dashboard() {
                     <p className="text-sm text-gray-600">Total Listings</p>
                     <p className="text-3xl font-bold text-gray-900">{listings.length}</p>
                   </div>
-                  <div className="text-4xl">ðŸ“¦</div>
+                  <div className="text-4xl"></div>
                 </div>
               </div>
               <div className="rounded-lg bg-white p-6 shadow-md">
