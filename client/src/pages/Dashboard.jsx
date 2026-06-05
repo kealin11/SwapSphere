@@ -220,7 +220,7 @@ export default function Dashboard() {
                 onClick={() => navigate('/create-listing')}
                 className="flex items-center gap-2 rounded bg-blue-600 px-6 py-2 font-semibold text-white transition hover:bg-blue-700"
               >
-                <span>âž•</span> Create Listing
+                <span></span> Create Listing
               </button>
             </div>
 
@@ -246,7 +246,7 @@ export default function Dashboard() {
 
             {!loading && listings.length === 0 && !error && (
               <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-                <div className="text-6xl mb-4">ðŸ“­</div>
+                <div className="text-6xl mb-4"></div>
                 <p className="text-xl text-gray-600 font-semibold">No listings yet</p>
                 <p className="mt-2 text-gray-500">Create your first listing to get started!</p>
                 <button
@@ -291,13 +291,13 @@ export default function Dashboard() {
                             onClick={() => handleEdit(listing.id)}
                             className="flex-1 rounded-lg bg-blue-100 px-3 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-200"
                           >
-                            âœï¸ Edit
+                             Edit
                           </button>
                           <button
                             onClick={() => handleDelete(listing.id)}
                             className="flex-1 rounded-lg bg-red-100 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-200"
                           >
-                            ðŸ—‘ï¸ Delete
+                             Delete
                           </button>
                         </div>
                       </div>
