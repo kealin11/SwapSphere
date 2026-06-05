@@ -58,14 +58,14 @@ router.delete('/users/:id', (req, res) => {
 
       // Step 2 — delete conversations the user is part of
       db.query(
-        'DELETE FROM conversations WHERE buyer_id = ? OR seller_id = ?',
+        'DELETE FROM conversations WHERE buyer_id = ? OR user_id = ?',
         [userId, userId],
         (err2) => {
           if (err2) return res.status(500).json({ message: 'Failed at conversations', error: err2.message });
 
           // Step 3 — delete offers made by or received by the user
           db.query(
-            'DELETE FROM offers WHERE buyer_id = ? OR seller_id = ?',
+            'DELETE FROM offers WHERE buyer_id = ? OR user_id = ?',
             [userId, userId],
             (err3) => {
               if (err3) return res.status(500).json({ message: 'Failed at offers', error: err3.message });
@@ -79,21 +79,21 @@ router.delete('/users/:id', (req, res) => {
 
                   // Step 5 — delete payments linked to user orders
                   db.query(
-                    'DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE buyer_id = ? OR seller_id = ?)',
+                    'DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE buyer_id = ? OR user_id = ?)',
                     [userId, userId],
                     (err5) => {
                       if (err5) return res.status(500).json({ message: 'Failed at payments', error: err5.message });
 
                       // Step 6 — delete orders
                       db.query(
-                        'DELETE FROM orders WHERE buyer_id = ? OR seller_id = ?',
+                        'DELETE FROM orders WHERE buyer_id = ? OR user_id = ?',
                         [userId, userId],
                         (err6) => {
                           if (err6) return res.status(500).json({ message: 'Failed at orders', error: err6.message });
 
                           // Step 7 — delete listings
                           db.query(
-                            'DELETE FROM listings WHERE seller_id = ?',
+                            'DELETE FROM listings WHERE user_id = ?',
                             [userId],
                             (err7) => {
                               if (err7) return res.status(500).json({ message: 'Failed at listings', error: err7.message });
@@ -124,7 +124,7 @@ router.get('/listings', (req, res) => {
   db.query(
     `SELECT l.*, u.name AS seller_name 
      FROM listings l 
-     JOIN users u ON l.seller_id = u.id 
+     JOIN users u ON l.user_id = u.id 
      ORDER BY l.created_at DESC`,
     (err, listings) => {
       if (err) {
